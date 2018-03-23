@@ -621,7 +621,7 @@ struct usbi_os_backend {
 	 * do this for you.
 	 */
 	int (*open)(struct libusb_device_handle *handle);
-
+    int (*open_fd)(struct libusb_device_handle *handle, int fd);
 	/*
 	 * XXX function to set file descriptor, added for mainly non-rooted Android
 	 */
