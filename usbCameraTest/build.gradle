@@ -24,30 +24,29 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion versionCompiler
-	buildToolsVersion versionBuildTool
-
-	compileOptions {
-		sourceCompatibility javaSourceCompatibility
-		targetCompatibility javaTargetCompatibility
-	}
-
+    compileSdkVersion versionCompiler
+    buildToolsVersion versionBuildTool
+    compileOptions {
+        sourceCompatibility javaSourceCompatibility
+        targetCompatibility javaTargetCompatibility
+    }
     defaultConfig {
         applicationId "com.serenegiant.usbcameratest"
         minSdkVersion 14
-		targetSdkVersion versionTarget
-		versionCode 8
-		versionName "3.00"
+        targetSdkVersion 26
+        versionCode 8
+        versionName "3.00"
     }
-
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
         }
     }
+    productFlavors {
+    }
 }
 
 dependencies {
-    compile project(':libuvccamera')
+    compile project(':mylibrary')
 }

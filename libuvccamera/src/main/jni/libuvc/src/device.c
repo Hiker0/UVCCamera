@@ -46,7 +46,7 @@
 #define LOCAL_DEBUG 0
 
 #define LOG_TAG "libuvc/device"
-#if 1	// デバッグ情報を出さない時1
+#if 0	// デバッグ情報を出さない時1
 	#ifndef LOG_NDEBUG
 		#define	LOG_NDEBUG		// LOGV/LOGD/MARKを出力しない時
 		#endif
@@ -373,13 +373,18 @@ uvc_error_t uvc_get_device_info(uvc_device_t *dev, uvc_device_info_t **info) {
 
 	UVC_ENTER();
 
-	internal_info = calloc(1, sizeof(*internal_info));
+	internal_info = (uvc_device_info_t *)malloc(sizeof(struct uvc_device_info));
+	memset(internal_info, 0, sizeof(struct uvc_device_info));
 	if (!internal_info) {
 		UVC_EXIT(UVC_ERROR_NO_MEM);
 		return UVC_ERROR_NO_MEM;
 	}
-	if (libusb_get_config_descriptor(dev->usb_dev, 0, &(internal_info->config)) != 0) {
+
+	int r ;
+    struct libusb_config_descriptor *dsr;
+	if ((r= libusb_get_config_descriptor(dev->usb_dev, 0, &(internal_info->config))) != 0) {
 //	if (libusb_get_active_config_descriptor(dev->usb_dev, &(internal_info->config)) != 0) {
+        LOGE("get config_descriptor =%d",r);
 		// XXX assume libusb_get_active_config_descriptor　is better
 		// but some buggy device will return error when get active config.
 		// so we will use libusb_get_config_descriptor...
@@ -949,14 +954,14 @@ uvc_error_t uvc_scan_control(uvc_device_t *dev, uvc_device_info_t *info) {
 	if (if_desc->bNumEndpoints != 0) {
 		info->ctrl_if.bEndpointAddress = if_desc->endpoint[0].bEndpointAddress;
 	}
-
+    LOGE("U1");
 	buffer = if_desc->extra;
 	buffer_left = if_desc->extra_length;
-
+/*
 	while (buffer_left >= 3) { // parseX needs to see buf[0,2] = length,type
 		block_size = buffer[0];
 		parse_ret = uvc_parse_vc(dev, info, buffer, block_size);
-
+        LOGE("U3");
 		if (parse_ret != UVC_SUCCESS) {
 			ret = parse_ret;
 			break;
@@ -965,7 +970,7 @@ uvc_error_t uvc_scan_control(uvc_device_t *dev, uvc_device_info_t *info) {
 		buffer_left -= block_size;
 		buffer += block_size;
 	}
-
+*/
 	UVC_EXIT(ret);
 	return ret;
 }
