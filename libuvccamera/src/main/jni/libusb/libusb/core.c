@@ -1252,25 +1252,30 @@ int API_EXPORTED libusb_open_fd(libusb_device *dev, libusb_device_handle **handl
 
     _handle = malloc(sizeof(*_handle) + priv_size);
     if (!_handle)
-    return LIBUSB_ERROR_NO_MEM;
+        return LIBUSB_ERROR_NO_MEM;
 
+    usbi_dbg("call usbi_mutex_init");
     r = usbi_mutex_init(&_handle->lock, NULL);
     if (r) {
-    free(_handle);
-    return LIBUSB_ERROR_OTHER;
+        usbi_dbg("usbi_mutex_init r=%d", r);
+        free(_handle);
+        return LIBUSB_ERROR_OTHER;
     }
 
+    usbi_dbg("libusb_ref_device");
     _handle->dev = libusb_ref_device(dev);
     _handle->claimed_interfaces = 0;
     memset(&_handle->os_priv, 0, priv_size);
-
+    
+    usbi_dbg("call open_fd open_fd=%d, open=%d", usbi_backend->open_fd, usbi_backend->open);
     r = usbi_backend->open_fd(_handle, fd);
+    usbi_dbg("call open_fd end");
     if (r < 0) {
-    usbi_dbg("open %d.%d returns %d", dev->bus_number, dev->device_address, r);
-    libusb_unref_device(dev);
-    usbi_mutex_destroy(&_handle->lock);
-    free(_handle);
-    return r;
+        usbi_dbg("open %d.%d returns %d", dev->bus_number, dev->device_address, r);
+        libusb_unref_device(dev);
+        usbi_mutex_destroy(&_handle->lock);
+        free(_handle);
+        return r;
     }
 
     usbi_mutex_lock(&ctx->open_devs_lock);
@@ -1286,7 +1291,7 @@ int API_EXPORTED libusb_open_fd(libusb_device *dev, libusb_device_handle **handl
      * so that it picks up the new fd, and then continues. */
     usbi_fd_notification(ctx);
 
-return 0;
+    return 0;
 }
 #endif
 

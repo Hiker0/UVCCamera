@@ -358,6 +358,98 @@ fail2:
 	return ret;
 }
 
+uvc_error_t uvc_open_with_fd(uvc_device_t *dev, uvc_device_handle_t **devh, int fd){
+    uvc_error_t ret;
+	struct libusb_device_handle *usb_devh;
+	uvc_device_handle_t *internal_devh;
+	struct libusb_device_descriptor desc;
+
+	UVC_ENTER();
+    UVC_DEBUG("fd = %d", fd);
+    
+	ret = libusb_open_fd(dev->usb_dev, &usb_devh,fd);
+	UVC_DEBUG("libusb_open() = %d", ret);
+
+	if (UNLIKELY(ret != UVC_SUCCESS)) {
+		UVC_EXIT(ret);
+		return ret;
+	}
+
+	uvc_ref_device(dev);
+
+	internal_devh = calloc(1, sizeof(*internal_devh));
+	internal_devh->dev = dev;
+	internal_devh->usb_devh = usb_devh;
+	internal_devh->reset_on_release_if = 0;	// XXX
+	ret = uvc_get_device_info(dev, &(internal_devh->info));
+	pthread_mutex_init(&internal_devh->status_mutex, NULL);	// XXX saki
+
+	if (UNLIKELY(ret != UVC_SUCCESS))
+		goto fail2;	// uvc_claim_if was not called yet and we don't need to call uvc_release_if
+#if !UVC_DETACH_ATTACH
+	/* enable automatic attach/detach kernel driver on supported platforms in libusb */
+	libusb_set_auto_detach_kernel_driver(usb_devh, 1);
+#endif
+	UVC_DEBUG("claiming control interface %d",
+			internal_devh->info->ctrl_if.bInterfaceNumber);
+	ret = uvc_claim_if(internal_devh,
+			internal_devh->info->ctrl_if.bInterfaceNumber);
+	if (UNLIKELY(ret != UVC_SUCCESS))
+		goto fail;
+
+	libusb_get_device_descriptor(dev->usb_dev, &desc);
+	internal_devh->is_isight = (desc.idVendor == 0x05ac && desc.idProduct == 0x8501);
+
+	if (internal_devh->info->ctrl_if.bEndpointAddress) {
+		UVC_DEBUG("status check transfer:bEndpointAddress=0x%02x", internal_devh->info->ctrl_if.bEndpointAddress);
+		internal_devh->status_xfer = libusb_alloc_transfer(0);
+		if (UNLIKELY(!internal_devh->status_xfer)) {
+			ret = UVC_ERROR_NO_MEM;
+			goto fail;
+		}
+
+		libusb_fill_interrupt_transfer(internal_devh->status_xfer, usb_devh,
+				internal_devh->info->ctrl_if.bEndpointAddress,
+				internal_devh->status_buf, sizeof(internal_devh->status_buf),
+				_uvc_status_callback, internal_devh, 0);
+		ret = libusb_submit_transfer(internal_devh->status_xfer);
+		UVC_DEBUG("libusb_submit_transfer() = %d", ret);
+
+		if (UNLIKELY(ret)) {
+			LOGE("device has a status interrupt endpoint, but unable to read from it");
+			goto fail;
+		}
+	} else {
+		LOGE("internal_devh->info->ctrl_if.bEndpointAddress is null");
+	}
+
+	if (dev->ctx->own_usb_ctx && dev->ctx->open_devices == NULL) {
+		/* Since this is our first device, we need to spawn the event handler thread */
+		uvc_start_handler_thread(dev->ctx);
+	}
+
+	DL_APPEND(dev->ctx->open_devices, internal_devh);
+	*devh = internal_devh;
+
+	UVC_EXIT(ret);
+
+	return ret;
+
+fail:
+	uvc_release_if(internal_devh, internal_devh->info->ctrl_if.bInterfaceNumber);	// XXX crash, assume when uvc_get_device_info failed.
+fail2:
+#if !UVC_DETACH_ATTACH
+	/* disable automatic attach/detach kernel driver on supported platforms in libusb */
+	libusb_set_auto_detach_kernel_driver(usb_devh, 0);
+#endif
+	libusb_close(usb_devh);
+	uvc_unref_device(dev);
+	uvc_free_devh(internal_devh);
+
+	UVC_EXIT(ret);
+
+	return ret;
+}
 /**
  * @internal
  * @brief Parses the complete device descriptor for a device

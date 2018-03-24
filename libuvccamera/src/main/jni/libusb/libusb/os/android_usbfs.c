@@ -520,7 +520,6 @@ static int op_init2(struct libusb_context *ctx, const char *usbfs) {	// XXX
 		usbi_err(ctx, "error starting hotplug event monitor");
 	}
 	usbi_mutex_static_unlock(&android_hotplug_startstop_lock);
-
 	RETURN(r, int);
 }
 
@@ -664,6 +663,7 @@ static int android_scan_devices(struct libusb_context *ctx) {
 
 #ifdef __ANDROID__
 	// do nothing
+	LOGI("I am android");
 #else
 	usbi_mutex_static_lock(&android_hotplug_lock);
 
@@ -1668,6 +1668,28 @@ static int op_open(struct libusb_device_handle *handle) {
 		}
 		return hpriv->fd;
 	}
+
+	r = ioctl(hpriv->fd, IOCTL_USBFS_GET_CAPABILITIES, &hpriv->caps);
+	if (UNLIKELY(r < 0)) {
+		if (errno == ENOTTY)
+			usbi_dbg("getcap not available");
+		else
+			usbi_err(HANDLE_CTX(handle), "getcap failed (%d)", errno);
+		hpriv->caps = 0;
+		if (supports_flag_zero_packet)
+			hpriv->caps |= USBFS_CAP_ZERO_PACKET;
+		if (supports_flag_bulk_continuation)
+			hpriv->caps |= USBFS_CAP_BULK_CONTINUATION;
+	}
+
+	return usbi_add_pollfd(HANDLE_CTX(handle), hpriv->fd, POLLOUT);
+}
+
+static int op_open_fd(struct libusb_device_handle *handle, int fd) {
+    int r;
+    usbi_dbg("op_open_fd fd=%d", fd);
+    struct android_device_handle_priv *hpriv = _device_handle_priv(handle);
+    hpriv->fd = fd;
 
 	r = ioctl(hpriv->fd, IOCTL_USBFS_GET_CAPABILITIES, &hpriv->caps);
 	if (UNLIKELY(r < 0)) {
@@ -3035,6 +3057,7 @@ const struct usbi_os_backend android_usbfs_backend = {
 	.get_config_descriptor_by_value = op_get_config_descriptor_by_value,
 	.set_device_fd = op_set_device_fd,	// XXX add for no-rooted Android devices
 	.open = op_open,
+	.open_fd = op_open_fd,
 	.close = op_close,
 	.get_configuration = op_get_configuration,
 	.set_configuration = op_set_configuration,

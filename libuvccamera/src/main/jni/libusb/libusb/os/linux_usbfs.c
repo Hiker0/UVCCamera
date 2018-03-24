@@ -1277,6 +1277,7 @@ static int linux_default_scan_devices (struct libusb_context *ctx)
 
 static int op_open(struct libusb_device_handle *handle)
 {
+    usbi_dbg("op_open handle=%d", handle);
 	struct linux_device_handle_priv *hpriv = _device_handle_priv(handle);
 	int r;
 
@@ -1314,9 +1315,23 @@ static int op_open(struct libusb_device_handle *handle)
 
 
 static int op_open_fd(struct libusb_device_handle *handle, int fd) {
+    int r;
+    usbi_dbg("op_open_fd fd=%d", fd);
     struct linux_device_handle_priv *hpriv = _device_handle_priv(handle);
     hpriv->fd = fd;
 
+	r = ioctl(hpriv->fd, IOCTL_USBFS_GET_CAPABILITIES, &hpriv->caps);
+	if (r < 0) {
+		if (errno == ENOTTY)
+			usbi_dbg("getcap not available");
+		else
+			usbi_err(HANDLE_CTX(handle), "getcap failed (%d)", errno);
+		hpriv->caps = 0;
+		if (supports_flag_zero_packet)
+			hpriv->caps |= USBFS_CAP_ZERO_PACKET;
+		if (supports_flag_bulk_continuation)
+			hpriv->caps |= USBFS_CAP_BULK_CONTINUATION;
+	}
     return usbi_add_pollfd(HANDLE_CTX(handle), hpriv->fd, POLLOUT);
 }
 
