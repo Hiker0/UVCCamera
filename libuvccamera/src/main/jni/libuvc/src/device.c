@@ -1046,14 +1046,13 @@ uvc_error_t uvc_scan_control(uvc_device_t *dev, uvc_device_info_t *info) {
 	if (if_desc->bNumEndpoints != 0) {
 		info->ctrl_if.bEndpointAddress = if_desc->endpoint[0].bEndpointAddress;
 	}
-    LOGE("U1");
+
 	buffer = if_desc->extra;
 	buffer_left = if_desc->extra_length;
-/*
+
 	while (buffer_left >= 3) { // parseX needs to see buf[0,2] = length,type
 		block_size = buffer[0];
 		parse_ret = uvc_parse_vc(dev, info, buffer, block_size);
-        LOGE("U3");
 		if (parse_ret != UVC_SUCCESS) {
 			ret = parse_ret;
 			break;
@@ -1062,7 +1061,7 @@ uvc_error_t uvc_scan_control(uvc_device_t *dev, uvc_device_info_t *info) {
 		buffer_left -= block_size;
 		buffer += block_size;
 	}
-*/
+
 	UVC_EXIT(ret);
 	return ret;
 }

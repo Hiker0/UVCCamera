@@ -63,6 +63,8 @@ int usbi_parse_descriptor(const unsigned char *source, const char *descriptor,
 	const char *cp;
 	uint32_t d;
 
+    usbi_dbg("usbi_parse_descriptor %s",descriptor);
+    
 	for (cp = descriptor; *cp; cp++) {
 		switch (*cp) {
 			case 'b':	/* 8-bit byte */
