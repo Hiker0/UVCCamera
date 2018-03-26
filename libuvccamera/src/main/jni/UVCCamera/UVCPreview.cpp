@@ -26,7 +26,7 @@
 #include <linux/time.h>
 #include <unistd.h>
 
-#if 1	// set 1 if you don't need debug log
+#if 0	// set 1 if you don't need debug log
 	#ifndef LOG_NDEBUG
 		#define	LOG_NDEBUG		// w/o LOGV/LOGD/MARK
 	#endif
@@ -41,15 +41,16 @@
 #include "UVCPreview.h"
 #include "libuvc_internal.h"
 
-#define	LOCAL_DEBUG 0
+#define	LOCAL_DEBUG 1
 #define MAX_FRAME 4
 #define PREVIEW_PIXEL_BYTES 4	// RGBA/RGBX
 #define FRAME_POOL_SZ MAX_FRAME + 2
 
-UVCPreview::UVCPreview(uvc_device_handle_t *devh)
+UVCPreview::UVCPreview(uvc_device_handle_t *devh, uvc_device_t *dev)
 :	mPreviewWindow(NULL),
 	mCaptureWindow(NULL),
 	mDeviceHandle(devh),
+	mDevice(dev),
 	requestWidth(DEFAULT_PREVIEW_WIDTH),
 	requestHeight(DEFAULT_PREVIEW_HEIGHT),
 	requestMinFps(DEFAULT_PREVIEW_FPS_MIN),
@@ -77,6 +78,7 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	pthread_mutex_init(&capture_mutex, NULL);
 //	
 	pthread_mutex_init(&pool_mutex, NULL);
+
 	EXIT();
 }
 
@@ -334,6 +336,7 @@ int UVCPreview::startPreview() {
 		pthread_mutex_lock(&preview_mutex);
 		{
 			if (LIKELY(mPreviewWindow)) {
+                LOGW("UVCCamera: create preview_thread");
 				result = pthread_create(&preview_thread, NULL, preview_thread_func, (void *)this);
 			}
 		}
@@ -517,12 +520,14 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 	uvc_error_t result = uvc_start_streaming_bandwidth(
 		mDeviceHandle, ctrl, uvc_preview_frame_callback, (void *)this, requestBandwidth, 0);
 
+    LOGI("do_preview");
+
 	if (LIKELY(!result)) {
 		clearPreviewFrame();
 		pthread_create(&capture_thread, NULL, capture_thread_func, (void *)this);
 
 #if LOCAL_DEBUG
-		LOGI("Streaming...");
+		LOGI("Streaming... frameMode=%d", frameMode);
 #endif
 		if (frameMode) {
 			// MJPEG mode
@@ -543,9 +548,16 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 		} else {
 			// yuvyv mode
 			for ( ; LIKELY(isRunning()) ; ) {
+                LOGI("waitPreviewFrame");
 				frame = waitPreviewFrame();
+                LOGI("waitPreviewFrame end");
 				if (LIKELY(frame)) {
-					frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
+                    LOGI("draw_preview_one");
+                    if(uvc_is_delta_device(mDevice)){
+                        frame = deltavision_draw_preview_one(frame, &mPreviewWindow, uvc_delta_any2rgbx, 4);
+                    }else{
+                        frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
+                    }
 					addCaptureFrame(frame);
 				}
 			}
@@ -625,7 +637,7 @@ int copyToSurface(uvc_frame_t *frame, ANativeWindow **window) {
 
 // changed to return original frame instead of returning converted frame even if convert_func is not null.
 uvc_frame_t *UVCPreview::draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, convFunc_t convert_func, int pixcelBytes) {
-	// ENTER();
+	 ENTER();
 
 	int b = 0;
 	pthread_mutex_lock(&preview_mutex);
@@ -639,6 +651,41 @@ uvc_frame_t *UVCPreview::draw_preview_one(uvc_frame_t *frame, ANativeWindow **wi
 			converted = get_frame(frame->width * frame->height * pixcelBytes);
 			if LIKELY(converted) {
 				b = convert_func(frame, converted);
+				if (!b) {
+					pthread_mutex_lock(&preview_mutex);
+					copyToSurface(converted, window);
+					pthread_mutex_unlock(&preview_mutex);
+				} else {
+					LOGE("failed converting");
+				}
+				recycle_frame(converted);
+			}
+		} else {
+			pthread_mutex_lock(&preview_mutex);
+			copyToSurface(frame, window);
+			pthread_mutex_unlock(&preview_mutex);
+		}
+	}
+	return frame; //RETURN(frame, uvc_frame_t *);
+}
+
+
+// changed to return original frame instead of returning converted frame even if convert_func is not null.
+uvc_frame_t *UVCPreview::deltavision_draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, deltavision_convFunc_t convert_func, int pixcelBytes) {
+	 ENTER();
+
+	int b = 0;
+	pthread_mutex_lock(&preview_mutex);
+	{
+		b = *window != NULL;
+	}
+	pthread_mutex_unlock(&preview_mutex);
+	if (LIKELY(b)) {
+		uvc_frame_t *converted;
+		if (convert_func) {
+			converted = get_frame(frame->width * frame->height * pixcelBytes);
+			if LIKELY(converted) {
+				b = convert_func(frame, converted,mDevice);
 				if (!b) {
 					pthread_mutex_lock(&preview_mutex);
 					copyToSurface(converted, window);

@@ -46,7 +46,7 @@
 #include "Parameters.h"
 #include "libuvc_internal.h"
 
-#define	LOCAL_DEBUG 0
+#define	LOCAL_DEBUG 1
 
 //**********************************************************************
 //
@@ -166,7 +166,7 @@ int UVCCamera::connect(int vid, int pid, int fd, int busnum, int devaddr, const 
 				mFd = fd;
 				mStatusCallback = new UVCStatusCallback(mDeviceHandle);
 				mButtonCallback = new UVCButtonCallback(mDeviceHandle);
-				mPreview = new UVCPreview(mDeviceHandle);
+				mPreview = new UVCPreview(mDeviceHandle, mDevice);
 			} else {
 				// open出来なかった時
 				LOGE("could not open camera:err=%d", result);

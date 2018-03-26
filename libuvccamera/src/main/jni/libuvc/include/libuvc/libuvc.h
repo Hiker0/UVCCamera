@@ -9,6 +9,8 @@ extern "C" {
 #include <libusb/libusb.h>
 #include <libuvc/libuvc_config.h>
 
+#define TRUE 1
+#define FALSE 0
 /** UVC error types, based on libusb errors
  * @ingroup diag
  */
@@ -521,6 +523,8 @@ typedef struct uvc_stream_ctrl {
 	uint8_t bInterfaceNumber;
 } uvc_stream_ctrl_t;
 
+typedef uint8_t BYTE;
+
 uvc_error_t uvc_init(uvc_context_t **ctx, struct libusb_context *usb_ctx);
 uvc_error_t uvc_init2(uvc_context_t **ctx, struct libusb_context *usb_ctx, const char *usbfs);
 void uvc_exit(uvc_context_t *ctx);
@@ -825,7 +829,34 @@ uvc_error_t uvc_any2iyuv420SP(uvc_frame_t *in, uvc_frame_t *out);	// XXX
 uvc_error_t uvc_any2yuyv(uvc_frame_t *in, uvc_frame_t *out);		// XXX
 
 uvc_error_t uvc_ensure_frame_size(uvc_frame_t *frame, size_t need_bytes); // XXX
+//**********************************************************************
+//added for deltavision
+int  uvc_is_delta_device(uvc_device_t *dev);
+uint16_t  uvc_get_productId(uvc_device_t *dev);
+uvc_error_t uvc_delta_any2rgbx(uvc_frame_t *in, uvc_frame_t *out, uvc_device_t *dev);
+void bayer16_convert_bayer8(int16_t *inbuf, uint8_t *outbuf, int width, int height, int shift);
+void bayer16_convert_dual_bayer8(uint8_t* in_bytes, uint8_t* out_bytes, int width, int height);
+void bayer_to_rgb24(BYTE *pBay, BYTE *pRGB24, int width, int height, int pix_order);
+/*convert bayer raw data to rgb24
+* args:
+*      pBay: pointer to buffer containing Raw bayer data data
+*      pRGB24: pointer to buffer containing rgb24 data
+*      width: picture width
+*      height: picture height
+*      pix_order: bayer pixel order (0=gb/rg   1=gr/bg  2=bg/gr  3=rg/bg)
+*/
+void
+bayer_to_rgb24(BYTE *pBay, BYTE *pRGB24, int width, int height, int pix_order);
 
+/*convert rgb24 to yuyv
+* args:
+*      prgb: pointer to buffer containing rgb24 data
+*      pyuv: pointer to buffer containing yuv data (yuyv)
+*      width: picture width
+*      height: picture height
+*/
+void
+bayer_mono_to_rgb24(BYTE *pBay, BYTE *pRGB24, int width, int height, int pix_order);
 //**********************************************************************
 // added for diagnostic
 // t_saki@serenegiant.com

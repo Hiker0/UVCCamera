@@ -60,6 +60,8 @@
 
 #include "libuvc/libuvc.h"
 #include "libuvc/libuvc_internal.h"
+#include <libusb/libusb.h>
+#include <libusb/libusbi.h>
 
 #define UVC_DETACH_ATTACH 0	// set this 1 attach/detach kernel driver by libuvc, set this 0 automatically attach/detach by libusb
 
@@ -1926,4 +1928,31 @@ void uvc_set_button_callback(uvc_device_handle_t *devh,
  */
 const uvc_format_desc_t *uvc_get_format_descs(uvc_device_handle_t *devh) {
   return devh->info->stream_ifs->format_descs;
+}
+
+int uvc_is_delta_device(uvc_device_t *dev){
+    uint16_t vendor = 0; 
+    uint16_t product = 0;
+    
+    if(NULL != dev &&  NULL != dev->usb_dev){
+        vendor = dev->usb_dev->device_descriptor.idVendor;
+        product = dev->usb_dev->device_descriptor.idProduct;
+        LOGW("vendor=%x, product=%x", vendor, product);
+     }
+    
+    if (0x2a0b == vendor){
+        return 1;
+	}else{
+	    return 0;
+	}
+}
+
+uint16_t  uvc_get_productId(uvc_device_t *dev){ 
+    uint16_t product = 0;
+    
+    if(NULL != dev &&  NULL != dev->usb_dev){
+        product = dev->usb_dev->device_descriptor.idProduct;
+    }
+    
+    return product;
 }

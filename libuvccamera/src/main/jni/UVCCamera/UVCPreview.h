@@ -40,6 +40,7 @@
 #define DEFAULT_BANDWIDTH 1.0f
 
 typedef uvc_error_t (*convFunc_t)(uvc_frame_t *in, uvc_frame_t *out);
+typedef uvc_error_t (*deltavision_convFunc_t)(uvc_frame_t *in, uvc_frame_t *out, uvc_device_t *dev);
 
 #define PIXEL_FORMAT_RAW 0		// same as PIXEL_FORMAT_YUV
 #define PIXEL_FORMAT_YUV 1
@@ -56,8 +57,11 @@ typedef struct {
 class UVCPreview {
 private:
 	uvc_device_handle_t *mDeviceHandle;
+    uvc_device_t *mDevice;
 	ANativeWindow *mPreviewWindow;
 	volatile bool mIsRunning;
+    uint16_t mVendorId;
+    uint16_t mProductId;
 	int requestWidth, requestHeight, requestMode;
 	int requestMinFps, requestMaxFps;
 	float requestBandwidth;
@@ -99,6 +103,7 @@ private:
 	int prepare_preview(uvc_stream_ctrl_t *ctrl);
 	void do_preview(uvc_stream_ctrl_t *ctrl);
 	uvc_frame_t *draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, convFunc_t func, int pixelBytes);
+    uvc_frame_t *deltavision_draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, deltavision_convFunc_t convert_func, int pixcelBytes);
 //
 	void addCaptureFrame(uvc_frame_t *frame);
 	uvc_frame_t *waitCaptureFrame();
@@ -110,7 +115,7 @@ private:
 	void do_capture_callback(JNIEnv *env, uvc_frame_t *frame);
 	void callbackPixelFormatChanged();
 public:
-	UVCPreview(uvc_device_handle_t *devh);
+	UVCPreview(uvc_device_handle_t *devh, uvc_device_t *dev);
 	~UVCPreview();
 
 	inline const bool isRunning() const;
