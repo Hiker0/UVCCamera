@@ -254,7 +254,13 @@ abstract class AbstractUVCCameraHandler extends Handler {
 				return camera.getBrightness();
 			} else if (flag == UVCCamera.PU_CONTRAST) {
 				return camera.getContrast();
-			}
+			}else if (flag == UVCCamera.PU_GAIN) {
+                return camera.getGain();
+            }else if (flag == UVCCamera.PU_GAMMA) {
+                return camera.getGamma();
+            }else if (flag == UVCCamera.CTRL_AE_ABS) {
+                return camera.getExposure();
+            }
 		}
 		throw new IllegalStateException();
 	}
@@ -270,7 +276,16 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			} else if (flag == UVCCamera.PU_CONTRAST) {
 				camera.setContrast(value);
 				return camera.getContrast();
-			}
+			} else if (flag == UVCCamera.PU_GAIN) {
+				camera.setGain(value);
+				return camera.getGain();
+			}else if (flag == UVCCamera.PU_GAMMA) {
+                camera.setGamma(value);
+                return camera.getGamma();
+            }else if (flag == UVCCamera.CTRL_AE_ABS) {
+                camera.setExposure(value);
+                return camera.getExposure();
+            }
 		}
 		throw new IllegalStateException();
 	}
@@ -286,7 +301,16 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			} else if (flag == UVCCamera.PU_CONTRAST) {
 				camera.resetContrast();
 				return camera.getContrast();
-			}
+			}else if (flag == UVCCamera.PU_GAIN) {
+                camera.resetGain();
+                return camera.getGain();
+            }else if (flag == UVCCamera.PU_GAMMA) {
+                camera.resetGain();
+                return camera.getGain();
+            }else if (flag == UVCCamera.CTRL_AE_ABS) {
+                camera.resetExposure();
+                return camera.getExposure();
+            }
 		}
 		throw new IllegalStateException();
 	}

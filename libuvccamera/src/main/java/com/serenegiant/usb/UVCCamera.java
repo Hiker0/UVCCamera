@@ -40,7 +40,7 @@ import android.view.SurfaceHolder;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
 
 public class UVCCamera {
-	private static final boolean DEBUG = false;	// TODO set false when releasing
+	private static final boolean DEBUG = true;	// TODO set false when releasing
 	private static final String TAG = UVCCamera.class.getSimpleName();
 	private static final String DEFAULT_USBFS = "/dev/bus/usb";
 
@@ -900,6 +900,46 @@ public class UVCCamera {
     		nativeSetZoom(mNativePtr, mZoomDef);
     	}
     }
+//================================================================================
+    /**
+     * @param exposure [%]
+     */
+    public synchronized void setExposure(final int exposure) {
+        if (mNativePtr != 0) {
+            final float range = Math.abs(mExposureMax - mExposureMin);
+            if (range > 0)
+                nativeSetGain(mNativePtr, (int)(exposure / 100.f * range) + mExposureMin);
+        }
+    }
+
+    /**
+     * @param exposure_abs
+     * @return gain[%]
+     */
+    public synchronized int getExposure(final int exposure_abs) {
+        int result = 0;
+        if (mNativePtr != 0) {
+            nativeUpdateGainLimit(mNativePtr);
+            final float range = Math.abs(mExposureMax - mExposureMin);
+            if (range > 0) {
+                result = (int)((exposure_abs - mExposureMin) * 100.f / range);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @return gain[%]
+     */
+    public synchronized int getExposure() {
+        return getGain(nativeGetExposure(mNativePtr));
+    }
+
+    public synchronized void resetExposure() {
+        if (mNativePtr != 0) {
+            nativeSetGain(mNativePtr, mExposureDef);
+        }
+    }
 
 //================================================================================
 	public synchronized void updateCameraParams() {
@@ -922,6 +962,7 @@ public class UVCCamera {
 	    	    	nativeUpdateZoomLimit(mNativePtr);
 	    	    	nativeUpdateWhiteBlanceLimit(mNativePtr);
 	    	    	nativeUpdateFocusLimit(mNativePtr);
+                    nativeUpdateExposureLimit(mNativePtr);
     	    	}
     	    	if (DEBUG) {
 					dumpControls(mControlSupports);
@@ -936,6 +977,7 @@ public class UVCCamera {
 					Log.v(TAG, String.format("Zoom:min=%d,max=%d,def=%d", mZoomMin, mZoomMax, mZoomDef));
 					Log.v(TAG, String.format("WhiteBlance:min=%d,max=%d,def=%d", mWhiteBlanceMin, mWhiteBlanceMax, mWhiteBlanceDef));
 					Log.v(TAG, String.format("Focus:min=%d,max=%d,def=%d", mFocusMin, mFocusMax, mFocusDef));
+					Log.v(TAG, String.format("Exposure:min=%d,max=%d,def=%d", mExposureMin, mExposureMax, mExposureDef));
 				}
 			}
     	} else {

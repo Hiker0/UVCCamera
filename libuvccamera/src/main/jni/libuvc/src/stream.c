@@ -681,7 +681,8 @@ static void _uvc_process_payload(uvc_stream_handle_t *strmh, const uint8_t *payl
 		0x11, 0x22, 0x33, 0x44,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xfa, 0xce
 	};
-
+    ENTER();
+        
 	// ignore empty payload transfers
 	if (UNLIKELY(!payload || !payload_len || !strmh->outbuf))
 		return;
@@ -817,7 +818,8 @@ static inline void _uvc_process_payload_iso(uvc_stream_handle_t *strmh, struct l
 	int packet_id;
 	uvc_vc_error_code_control_t vc_error_code;
 	uvc_vs_error_code_control_t vs_error_code;
-
+    ENTER();
+        
 	for (packet_id = 0; packet_id < transfer->num_iso_packets; ++packet_id) {
 		check_header = 1;
 

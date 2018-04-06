@@ -1940,7 +1940,7 @@ int uvc_is_delta_device(uvc_device_t *dev){
         LOGW("vendor=%x, product=%x", vendor, product);
      }
     
-    if (0x2a0b == vendor){
+    if (0x2a0b == vendor || 0xcafe == vendor){
         return 1;
 	}else{
 	    return 0;

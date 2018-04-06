@@ -67,13 +67,13 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
      * if your camera does not support specific resolution and mode,
      * {@link UVCCamera#setPreviewSize(int, int, int)} throw exception
      */
-    private static final int PREVIEW_WIDTH = 640;
+    private static final int PREVIEW_WIDTH = 1280;
     /**
      * preview resolution(height)
      * if your camera does not support specific resolution and mode,
      * {@link UVCCamera#setPreviewSize(int, int, int)} throw exception
      */
-    private static final int PREVIEW_HEIGHT = 480;
+    private static final int PREVIEW_HEIGHT = 720;
     /**
      * preview mode
      * if your camera does not support specific resolution and mode,
@@ -105,7 +105,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	 */
 	private ImageButton mCaptureButton;
 
-	private View mBrightnessButton, mContrastButton;
+	private View mBrightnessButton, mContrastButton,mGainButton, mExposureButton;
 	private View mResetButton;
 	private View mToolsLayout, mValueLayout;
 	private SeekBar mSettingSeekbar;
@@ -129,6 +129,10 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		mBrightnessButton.setOnClickListener(mOnClickListener);
 		mContrastButton = findViewById(R.id.contrast_button);
 		mContrastButton.setOnClickListener(mOnClickListener);
+        mExposureButton = findViewById(R.id.exposure_button);
+        mExposureButton.setOnClickListener(mOnClickListener);
+        mGainButton = findViewById(R.id.gain_button);
+        mGainButton.setOnClickListener(mOnClickListener);
 		mResetButton = findViewById(R.id.reset_button);
 		mResetButton.setOnClickListener(mOnClickListener);
 		mSettingSeekbar = (SeekBar)findViewById(R.id.setting_seekbar);
@@ -205,6 +209,12 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 				break;
 			case R.id.contrast_button:
 				showSettings(UVCCamera.PU_CONTRAST);
+				break;
+            case R.id.exposure_button:
+                showSettings(UVCCamera.CTRL_AE_ABS);
+                break;
+			case R.id.gain_button:
+				showSettings(UVCCamera.PU_GAIN);
 				break;
 			case R.id.reset_button:
 				resetSettings();
@@ -374,6 +384,12 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 			mContrastButton.setVisibility(
 		    	checkSupportFlag(UVCCamera.PU_CONTRAST)
 		    	? visible_active : View.INVISIBLE);
+            mGainButton.setVisibility(
+                    checkSupportFlag(UVCCamera.PU_GAIN)
+                            ? visible_active : View.INVISIBLE);
+            mExposureButton.setVisibility(
+                    checkSupportFlag(UVCCamera.PU_GAIN)
+                            ? visible_active : View.INVISIBLE);
 		}
 	};
 
@@ -389,6 +405,8 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 			switch (mode) {
 			case UVCCamera.PU_BRIGHTNESS:
 			case UVCCamera.PU_CONTRAST:
+			case UVCCamera.PU_GAIN:
+            case UVCCamera.CTRL_AE_ABS:
 				mSettingMode = mode;
 				mSettingSeekbar.setProgress(getValue(mode));
 				ViewAnimationHelper.fadeIn(mValueLayout, -1, 0, mViewAnimationListener);
@@ -402,6 +420,8 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 			switch (mSettingMode) {
 			case UVCCamera.PU_BRIGHTNESS:
 			case UVCCamera.PU_CONTRAST:
+			case UVCCamera.PU_GAIN:
+            case UVCCamera.CTRL_AE_ABS:
 				mSettingSeekbar.setProgress(resetValue(mSettingMode));
 				break;
 			}
@@ -465,6 +485,8 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 				switch (mSettingMode) {
 				case UVCCamera.PU_BRIGHTNESS:
 				case UVCCamera.PU_CONTRAST:
+				case UVCCamera.PU_GAIN:
+                case UVCCamera.CTRL_AE_ABS:
 					setValue(mSettingMode, seekBar.getProgress());
 					break;
 				}

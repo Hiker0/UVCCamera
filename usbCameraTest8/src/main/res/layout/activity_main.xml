@@ -95,6 +95,25 @@
 			android:layout_toRightOf="@+id/brightness_button"
 			android:text="contrast"/>
 
+        <Button
+            android:id="@+id/exposure_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="@dimen/horizontal_margin_half"
+            android:layout_marginTop="@dimen/vertical_margin"
+            android:layout_toRightOf="@+id/contrast_button"
+            android:text="exposure"/>
+
+		<Button
+			android:id="@+id/gain_button"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerVertical="true"
+			android:layout_marginLeft="@dimen/horizontal_margin_half"
+			android:layout_marginTop="@dimen/vertical_margin"
+			android:layout_toRightOf="@+id/exposure_button"
+			android:text="gain"/>
 	</RelativeLayout>
 
 	<RelativeLayout

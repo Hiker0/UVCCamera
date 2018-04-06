@@ -685,7 +685,7 @@ uvc_frame_t *UVCPreview::deltavision_draw_preview_one(uvc_frame_t *frame, ANativ
 		if (convert_func) {
 			converted = get_frame(frame->width * frame->height * pixcelBytes);
 			if LIKELY(converted) {
-				b = convert_func(frame, converted,mDevice);
+				b = convert_func(frame, converted, mDevice);
 				if (!b) {
 					pthread_mutex_lock(&preview_mutex);
 					copyToSurface(converted, window);
