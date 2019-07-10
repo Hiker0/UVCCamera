@@ -32,10 +32,10 @@ android {
     }
     defaultConfig {
         applicationId "com.serenegiant.usbcameratest"
-        minSdkVersion 14
-        targetSdkVersion 26
-        versionCode 8
-        versionName "3.00"
+        minSdkVersion 23
+		targetSdkVersion versionTarget
+		versionCode 8
+		versionName "3.00"
     }
     buildTypes {
         release {
@@ -48,5 +48,5 @@ android {
 }
 
 dependencies {
-    compile project(':mylibrary')
+    implementation project(':libuvccamera')
 }
